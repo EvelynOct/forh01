@@ -15,10 +15,10 @@ import (
 
 const (
 	serverIP      = ""
-	serverPort    = "54321"
+	serverPort    = "5282"
 	serverType    = "udp4"
 	bufferSize    = 2048
-	appLayerProto = "jarkom-quic-sample-minjar"
+	appLayerProto = "jarkom-quic-sample-evelyn"
 )
 
 func main() {
@@ -62,11 +62,14 @@ func main() {
 func handleConnection(connection quic.Connection) {
 	fmt.Printf("[quic] Receiving connection from %s\n", connection.RemoteAddr())
 
-	stream, err := connection.AcceptStream(context.Background())
-	if err != nil {
-		log.Fatalln(err)
+	for {
+		stream, err := connection.AcceptStream(context.Background())
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		go handleStream(connection.RemoteAddr(), stream)
 	}
-	go handleStream(connection.RemoteAddr(), stream)
 }
 
 func handleStream(clientAddress net.Addr, stream quic.Stream) {
@@ -82,7 +85,7 @@ type logicProcessorAndWriter struct{ io.Writer }
 
 func (lp logicProcessorAndWriter) Write(receivedMessageRaw []byte) (int, error) {
 
-	receivedMessage := string(receivedMessageRaw)
+	receivedMessage := strings.TrimSpace(string(receivedMessageRaw))
 	fmt.Printf("[quic] Receive message: %s\n", receivedMessage)
 
 	response := strings.ToUpper(receivedMessage)
